@@ -1,25 +1,29 @@
--- SERVICES
+--// SERVICES
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 
 local Player = Players.LocalPlayer
 
---================= LOGO =================
+--==================================================
+--==================== LOGO GUI ====================
+--==================================================
+
 local gui = Instance.new("ScreenGui")
+gui.Name = "SystemCmd32Intro"
 gui.ResetOnSpawn = false
 gui.Parent = Player:WaitForChild("PlayerGui")
 
 local t = Instance.new("TextLabel")
 t.Parent = gui
-t.Size = UDim2.fromScale(1,1)
+t.Size = UDim2.fromScale(1, 1)
 t.BackgroundTransparency = 1
 t.Text = "SystemCmd32"
 t.Font = Enum.Font.GothamBlack
 t.TextSize = 72
-t.TextColor3 = Color3.fromRGB(255,60,60)
+t.TextColor3 = Color3.fromRGB(255, 60, 60)
 t.TextTransparency = 1
-t.TextStrokeTransparency = 0.2
+t.TextStrokeTransparency = 0.5
 t.TextScaled = true
 
 TweenService:Create(
@@ -40,18 +44,21 @@ task.delay(4, function()
 	end)
 end)
 
---================= HITBOX SCRIPT =================
+--==================================================
+--================= HITBOX SCRIPT ==================
+--==================================================
+
 local HeadSize = 18
-local Enabled = true
-local TeamCheck = false
+local IsEnabled = true
+local IsTeamCheckEnabled = false
 
 RunService.RenderStepped:Connect(function()
-	if not Enabled then return end
+	if not IsEnabled then return end
 
 	local localTeam = Player.Team
 
 	for _, plr in ipairs(Players:GetPlayers()) do
-		if plr ~= Player and (not TeamCheck or plr.Team ~= localTeam) then
+		if plr ~= Player and (not IsTeamCheckEnabled or plr.Team ~= localTeam) then
 			local char = plr.Character
 			local hrp = char and char:FindFirstChild("HumanoidRootPart")
 
