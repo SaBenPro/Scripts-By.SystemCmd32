@@ -1,34 +1,43 @@
---// SERVICES
+-- SERVICES
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 
+-- LocalPlayer FIX (executor-safe)
 local Player = Players.LocalPlayer
+while not Player do
+	task.wait()
+	Player = Players.LocalPlayer
+end
 
---==================================================
---==================== LOGO GUI ====================
---==================================================
+-- PlayerGui FIX
+local PlayerGui = Player:FindFirstChildOfClass("PlayerGui")
+while not PlayerGui do
+	task.wait()
+	PlayerGui = Player:FindFirstChildOfClass("PlayerGui")
+end
 
+--================= LOGO =================
 local gui = Instance.new("ScreenGui")
-gui.Name = "SystemCmd32Intro"
 gui.ResetOnSpawn = false
-gui.Parent = Player:WaitForChild("PlayerGui")
+gui.IgnoreGuiInset = true
+gui.Parent = PlayerGui
 
 local t = Instance.new("TextLabel")
 t.Parent = gui
-t.Size = UDim2.fromScale(1, 1)
+t.Size = UDim2.fromScale(1,1)
 t.BackgroundTransparency = 1
 t.Text = "SystemCmd32"
 t.Font = Enum.Font.GothamBlack
 t.TextSize = 72
-t.TextColor3 = Color3.fromRGB(255, 60, 60)
-t.TextTransparency = 1
-t.TextStrokeTransparency = 0.5
 t.TextScaled = true
+t.TextColor3 = Color3.fromRGB(255,60,60)
+t.TextTransparency = 1
+t.TextStrokeTransparency = 0.2
 
 TweenService:Create(
 	t,
-	TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+	TweenInfo.new(1),
 	{TextTransparency = 0}
 ):Play()
 
@@ -38,27 +47,23 @@ task.delay(4, function()
 		TweenInfo.new(1.5),
 		{TextTransparency = 1}
 	):Play()
-
 	task.delay(1.6, function()
 		gui:Destroy()
 	end)
 end)
 
---==================================================
---================= HITBOX SCRIPT ==================
---==================================================
-
+--================= HITBOX =================
 local HeadSize = 18
-local IsEnabled = true
-local IsTeamCheckEnabled = false
+local Enabled = true
+local TeamCheck = false
 
 RunService.RenderStepped:Connect(function()
-	if not IsEnabled then return end
+	if not Enabled then return end
 
-	local localTeam = Player.Team
+	local myTeam = Player.Team
 
 	for _, plr in ipairs(Players:GetPlayers()) do
-		if plr ~= Player and (not IsTeamCheckEnabled or plr.Team ~= localTeam) then
+		if plr ~= Player and (not TeamCheck or plr.Team ~= myTeam) then
 			local char = plr.Character
 			local hrp = char and char:FindFirstChild("HumanoidRootPart")
 
