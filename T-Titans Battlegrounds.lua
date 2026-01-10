@@ -1,5 +1,3 @@
---================ GUI =================
-do
 	local gui = Instance.new("ScreenGui")
 	gui.ResetOnSpawn = false
 	gui.Parent = Player:WaitForChild("PlayerGui")
