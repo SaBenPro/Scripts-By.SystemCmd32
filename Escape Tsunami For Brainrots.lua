@@ -1,4 +1,4 @@
---// SystemCmd32 | FINAL YT RELEASE + Safe Base Collect Update
+--// SystemCmd32 | FINAL YT RELEASE + Instant Collect Update
 
 --================ SERVICES =================
 local Players = game:GetService("Players")
@@ -247,6 +247,10 @@ btnCollect.MouseButton1Click:Connect(function()
 	if BUSY then return end
 	BUSY=true
 
+	-- Buton arkaplan kırmızı
+	local oldColor = btnCollect.BackgroundColor3
+	btnCollect.BackgroundColor3 = Color3.fromRGB(200,0,0)
+
 	local char = player.Character or player.CharacterAdded:Wait()
 	local hrp = char:WaitForChild("HumanoidRootPart")
 	local slotsFolder = myBase:FindFirstChild("Slots")
@@ -255,17 +259,10 @@ btnCollect.MouseButton1Click:Connect(function()
 		for _,slot in ipairs(slotsFolder:GetChildren()) do
 			local collect = slot:FindFirstChild("Collect")
 			if collect then
-				-- 0.1 hızla ışınlanma
-				local startPos = hrp.Position
-				local targetPos = collect.Position
-				local direction = (targetPos - startPos).Unit
-				local distance = (targetPos - startPos).Magnitude
-				local steps = math.max(1, math.floor(distance/0.1))
-				for i=1,steps do
-					hrp.CFrame = CFrame.new(hrp.Position + direction*0.1)
-					RunService.Heartbeat:Wait()
-				end
-				-- Temas ettikçe partları silme!
+				-- Anında ışınlan, 0.1 saniye bekle
+				hrp.CFrame = CFrame.new(collect.Position + Vector3.new(0,3,0))
+				task.wait(0.1)
+				-- Temas ediliyor, ama partlar silinmiyor
 			end
 		end
 	end
@@ -275,6 +272,8 @@ btnCollect.MouseButton1Click:Connect(function()
 		hrp.CFrame = spawn.CFrame + Vector3.new(0,3,0)
 	end
 
+	-- Buton rengini eski haline getir
+	btnCollect.BackgroundColor3 = oldColor
 	BUSY=false
 end)
 
