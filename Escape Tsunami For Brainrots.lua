@@ -1,4 +1,4 @@
---// SystemCmd32 | FINAL YT RELEASE + Base Collect Update
+--// SystemCmd32 | FINAL YT RELEASE + Base & Collect Update
 
 --================ SERVICES =================
 local Players = game:GetService("Players")
@@ -16,8 +16,7 @@ if PlayerGui:FindFirstChild("SystemCmd32_GUI") then return end
 --================ VARIABLES =================
 local BASES_FOLDER = Workspace:WaitForChild("Bases")
 local myBase = nil
-local collected = false
-local BUSY=false
+local BUSY = false
 
 --================ INTRO SPLASH =================
 local splashGui = Instance.new("ScreenGui")
@@ -50,8 +49,8 @@ gui.ResetOnSpawn = false
 gui.Parent = PlayerGui
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0,300,0,240)
-frame.Position = UDim2.new(0.5,-150,0.5,-120)
+frame.Size = UDim2.new(0,300,0,260)
+frame.Position = UDim2.new(0.5,-150,0.5,-130)
 frame.BackgroundColor3 = Color3.fromRGB(18,18,22)
 frame.BorderSizePixel = 0
 frame.Active = true
@@ -147,38 +146,52 @@ end
 
 --================ BASE DETECTION =================
 local function detectBase()
-	local char = player.Character or player.CharacterAdded:Wait()
+	local char = player.Character
+	if not char then return end
 	local hrp = char:WaitForChild("HumanoidRootPart")
 	for _,base in ipairs(BASES_FOLDER:GetChildren()) do
 		if base:IsA("Model") then
-			local primaryPart = base.PrimaryPart or base:FindFirstChildWhichIsA("BasePart")
-			if primaryPart and (hrp.Position - primaryPart.Position).Magnitude < 10 then
-				myBase = base
-				break
+			local floors = base:FindFirstChild("Floors")
+			if floors then
+				local floor1 = floors:FindFirstChild("Floor1")
+				if floor1 then
+					local innerFloors = floor1:FindFirstChild("Floors")
+					if innerFloors then
+						local brainPart = innerFloors:FindFirstChild("BrainrotFloor")
+						if brainPart then
+							-- Karakter BrainrotFloor ile temas ediyorsa bizim base
+							local connection
+							connection = brainPart.Touched:Connect(function(part)
+								if part:IsDescendantOf(char) then
+									myBase = base
+									connection:Disconnect()
+								end
+							end)
+						end
+					end
+				end
 			end
 		end
 	end
 end
 
--- Karakter spawn olduktan sonra base algıla
 player.CharacterAdded:Connect(function(char)
-	task.wait(0.5)
+	task.wait(0.3)
 	detectBase()
 end)
 
--- Açılışta bir defa öldürüp base algılamayı tetikleyelim
+-- Açılışta spawn/reset
 local char = player.Character or player.CharacterAdded:Wait()
 char:BreakJoints()
 task.wait(1)
 
---================ STEAL =================
+--================ STEAL BRAINROT =================
 btnSteal.MouseButton1Click:Connect(function()
 	if BUSY then return end
 	BUSY=true
 
 	local char=player.Character or player.CharacterAdded:Wait()
 	local hrp=char:WaitForChild("HumanoidRootPart")
-
 	local spawn=Workspace:FindFirstChild("SpawnLocation1")
 	local back=spawn and (spawn.CFrame+Vector3.new(0,3,0)) or hrp.CFrame
 
@@ -187,27 +200,22 @@ btnSteal.MouseButton1Click:Connect(function()
 	task.wait(0.65)
 	for i=1,3 do RunService.Heartbeat:Wait() end
 
-	-- Celestial öncelikli kontrol
 	local activeBrainrots = Workspace:FindFirstChild("ActiveBrainrots")
 	local targetFolder = nil
-
 	if activeBrainrots then
 		local celestial = activeBrainrots:FindFirstChild("Celestial")
-		if celestial and #celestial:GetChildren() > 0 then
+		if celestial and #celestial:GetChildren()>0 then
 			targetFolder = celestial
 		else
 			targetFolder = activeBrainrots:FindFirstChild("Secret")
 		end
 	end
 
-	-- En yüksek rate olanı bul
 	local best,bestRate=nil,0
 	if targetFolder then
 		for _,m in ipairs(targetFolder:GetChildren()) do
-			local h=m:FindFirstChild("Handle")
-			local r=h and h:FindFirstChild("StatsGui")
-				and h.StatsGui:FindFirstChild("Frame")
-				and h.StatsGui.Frame:FindFirstChild("Rate")
+			local h = m:FindFirstChild("Handle")
+			local r = h and h:FindFirstChild("StatsGui") and h.StatsGui:FindFirstChild("Frame") and h.StatsGui.Frame:FindFirstChild("Rate")
 			if r then
 				local v=parseRate(r.Text)
 				if v>bestRate then bestRate=v best=m end
@@ -215,13 +223,11 @@ btnSteal.MouseButton1Click:Connect(function()
 		end
 	end
 
-	-- Proximity prompt
 	if best and best:FindFirstChild("Handle") then
 		local h=best.Handle
-		hrp.CFrame=h.CFrame*CFrame.new(0,0,-2)
+		hrp.CFrame = h.CFrame*CFrame.new(0,0,-2)
 		task.wait(0.25)
-
-		local p=h:FindFirstChildWhichIsA("ProximityPrompt",true)
+		local p = h:FindFirstChildWhichIsA("ProximityPrompt",true)
 		if p then
 			p.HoldDuration=0
 			for i=1,3 do
@@ -231,7 +237,6 @@ btnSteal.MouseButton1Click:Connect(function()
 		end
 	end
 
-	-- Geri dön
 	task.wait(0.35)
 	hrp.CFrame=back
 	BUSY=false
@@ -243,25 +248,30 @@ btnCollect.MouseButton1Click:Connect(function()
 	if BUSY then return end
 	BUSY=true
 
-	local char=player.Character or player.CharacterAdded:Wait()
-	local hrp=char:WaitForChild("HumanoidRootPart")
-
-	-- Tüm Slots içindeki Collect objelerini al
+	local char = player.Character or player.CharacterAdded:Wait()
+	local hrp = char:WaitForChild("HumanoidRootPart")
 	local slotsFolder = myBase:FindFirstChild("Slots")
+
 	if slotsFolder then
 		for _,slot in ipairs(slotsFolder:GetChildren()) do
 			local collect = slot:FindFirstChild("Collect")
 			if collect then
-				-- Karakter temasıyla topla
-				collect.Position = hrp.Position
-				task.wait(0.03) -- hafif delay toplama hissi
+				-- 0.1 hızla karakteri collect üstüne taşı
+				local targetPos = collect.Position
+				local direction = (targetPos - hrp.Position).Unit
+				local distance = (targetPos - hrp.Position).Magnitude
+				local steps = math.max(1, math.floor(distance / 0.1))
+				for i=1,steps do
+					hrp.CFrame = CFrame.new(hrp.Position + direction * 0.1)
+					RunService.Heartbeat:Wait()
+				end
 				collect:Destroy()
 			end
 		end
 	end
 
-	-- Toplama bitince spawn üstüne ışınlan
-	local spawn=Workspace:FindFirstChild("SpawnLocation1")
+	-- İşlem bitince spawn üstüne ışınlan
+	local spawn = Workspace:FindFirstChild("SpawnLocation1")
 	if spawn then
 		hrp.CFrame = spawn.CFrame + Vector3.new(0,3,0)
 	end
