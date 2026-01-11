@@ -1,4 +1,4 @@
---// SystemCmd32 | FINAL YT RELEASE
+--// SystemCmd32 | FINAL YT RELEASE (Updated Celestial Check)
 
 --================ SERVICES =================
 local Players = game:GetService("Players")
@@ -167,16 +167,28 @@ btnSteal.MouseButton1Click:Connect(function()
 	local spawn=workspace:FindFirstChild("SpawnLocation1")
 	local back=spawn and (spawn.CFrame+Vector3.new(0,3,0)) or hrp.CFrame
 
+	-- Işınlanma
 	hrp.CFrame=CFrame.new(2613.78,-2.79,-7.69)
 	task.wait(0.65)
 	for i=1,3 do RunService.Heartbeat:Wait() end
 
-	local best,bestRate=nil,0
-	local secret=workspace:FindFirstChild("ActiveBrainrots")
-		and workspace.ActiveBrainrots:FindFirstChild("Secret")
+	-- Celestial öncelikli kontrol
+	local activeBrainrots = workspace:FindFirstChild("ActiveBrainrots")
+	local targetFolder = nil
 
-	if secret then
-		for _,m in ipairs(secret:GetChildren()) do
+	if activeBrainrots then
+		local celestial = activeBrainrots:FindFirstChild("Celestial")
+		if celestial and #celestial:GetChildren() > 0 then
+			targetFolder = celestial
+		else
+			targetFolder = activeBrainrots:FindFirstChild("Secret")
+		end
+	end
+
+	-- En yüksek rate olanı bul
+	local best,bestRate=nil,0
+	if targetFolder then
+		for _,m in ipairs(targetFolder:GetChildren()) do
 			local h=m:FindFirstChild("Handle")
 			local r=h and h:FindFirstChild("StatsGui")
 				and h.StatsGui:FindFirstChild("Frame")
@@ -188,6 +200,7 @@ btnSteal.MouseButton1Click:Connect(function()
 		end
 	end
 
+	-- Proximity prompt
 	if best and best:FindFirstChild("Handle") then
 		local h=best.Handle
 		hrp.CFrame=h.CFrame*CFrame.new(0,0,-2)
@@ -203,6 +216,7 @@ btnSteal.MouseButton1Click:Connect(function()
 		end
 	end
 
+	-- Geri dön
 	task.wait(0.35)
 	hrp.CFrame=back
 	BUSY=false
