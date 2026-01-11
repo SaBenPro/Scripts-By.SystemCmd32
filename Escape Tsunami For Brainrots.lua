@@ -1,4 +1,4 @@
---// SystemCmd32 | FINAL YT RELEASE + Base & Collect Update
+--// SystemCmd32 | FINAL YT RELEASE + Safe Base Collect Update
 
 --================ SERVICES =================
 local Players = game:GetService("Players")
@@ -159,7 +159,6 @@ local function detectBase()
 					if innerFloors then
 						local brainPart = innerFloors:FindFirstChild("BrainrotFloor")
 						if brainPart then
-							-- Karakter BrainrotFloor ile temas ediyorsa bizim base
 							local connection
 							connection = brainPart.Touched:Connect(function(part)
 								if part:IsDescendantOf(char) then
@@ -256,21 +255,21 @@ btnCollect.MouseButton1Click:Connect(function()
 		for _,slot in ipairs(slotsFolder:GetChildren()) do
 			local collect = slot:FindFirstChild("Collect")
 			if collect then
-				-- 0.1 hızla karakteri collect üstüne taşı
+				-- 0.1 hızla ışınlanma
+				local startPos = hrp.Position
 				local targetPos = collect.Position
-				local direction = (targetPos - hrp.Position).Unit
-				local distance = (targetPos - hrp.Position).Magnitude
-				local steps = math.max(1, math.floor(distance / 0.1))
+				local direction = (targetPos - startPos).Unit
+				local distance = (targetPos - startPos).Magnitude
+				local steps = math.max(1, math.floor(distance/0.1))
 				for i=1,steps do
-					hrp.CFrame = CFrame.new(hrp.Position + direction * 0.1)
+					hrp.CFrame = CFrame.new(hrp.Position + direction*0.1)
 					RunService.Heartbeat:Wait()
 				end
-				collect:Destroy()
+				-- Temas ettikçe partları silme!
 			end
 		end
 	end
 
-	-- İşlem bitince spawn üstüne ışınlan
 	local spawn = Workspace:FindFirstChild("SpawnLocation1")
 	if spawn then
 		hrp.CFrame = spawn.CFrame + Vector3.new(0,3,0)
