@@ -1,4 +1,4 @@
---// SystemCmd32 | FINAL YT RELEASE (Updated Celestial Check)
+--// SystemCmd32 | FINAL YT RELEASE + Base Collect Update
 
 --================ SERVICES =================
 local Players = game:GetService("Players")
@@ -8,11 +8,16 @@ local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 local PlayerGui = player:WaitForChild("PlayerGui")
+local Workspace = workspace
 
 --================ SAFE GUARD =================
-if PlayerGui:FindFirstChild("SystemCmd32_GUI") then
-	return
-end
+if PlayerGui:FindFirstChild("SystemCmd32_GUI") then return end
+
+--================ VARIABLES =================
+local BASES_FOLDER = Workspace:WaitForChild("Bases")
+local myBase = nil
+local collected = false
+local BUSY=false
 
 --================ INTRO SPLASH =================
 local splashGui = Instance.new("ScreenGui")
@@ -32,20 +37,9 @@ title.TextColor3 = Color3.fromRGB(170,120,255)
 title.TextTransparency = 1
 title.TextStrokeTransparency = 0.25
 
-TweenService:Create(
-	title,
-	TweenInfo.new(1, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
-	{TextTransparency = 0}
-):Play()
-
+TweenService:Create(title, TweenInfo.new(1, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {TextTransparency=0}):Play()
 task.wait(3.5)
-
-TweenService:Create(
-	title,
-	TweenInfo.new(1.2, Enum.EasingStyle.Quint, Enum.EasingDirection.In),
-	{TextTransparency = 1}
-):Play()
-
+TweenService:Create(title, TweenInfo.new(1.2, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {TextTransparency=1}):Play()
 task.wait(1.3)
 splashGui:Destroy()
 
@@ -56,8 +50,8 @@ gui.ResetOnSpawn = false
 gui.Parent = PlayerGui
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0,260,0,190)
-frame.Position = UDim2.new(0.5,-130,0.5,-95)
+frame.Size = UDim2.new(0,300,0,240)
+frame.Position = UDim2.new(0.5,-150,0.5,-120)
 frame.BackgroundColor3 = Color3.fromRGB(18,18,22)
 frame.BorderSizePixel = 0
 frame.Active = true
@@ -87,8 +81,8 @@ header.TextColor3 = Color3.fromRGB(180,130,255)
 --================ BUTTON MAKER =================
 local function makeButton(txt, y, col)
 	local b = Instance.new("TextButton", frame)
-	b.Size = UDim2.new(0,210,0,42)
-	b.Position = UDim2.new(0.5,-105,0,y)
+	b.Size = UDim2.new(0,240,0,42)
+	b.Position = UDim2.new(0.5,-120,0,y)
 	b.Text = txt
 	b.Font = Enum.Font.GothamBold
 	b.TextSize = 15
@@ -98,14 +92,10 @@ local function makeButton(txt, y, col)
 	Instance.new("UICorner", b).CornerRadius = UDim.new(0,12)
 
 	b.MouseEnter:Connect(function()
-		TweenService:Create(b,TweenInfo.new(0.15),{
-			Size = UDim2.new(0,220,0,45)
-		}):Play()
+		TweenService:Create(b,TweenInfo.new(0.15),{Size=UDim2.new(0,250,0,45)}):Play()
 	end)
 	b.MouseLeave:Connect(function()
-		TweenService:Create(b,TweenInfo.new(0.15),{
-			Size = UDim2.new(0,210,0,42)
-		}):Play()
+		TweenService:Create(b,TweenInfo.new(0.15),{Size=UDim2.new(0,240,0,42)}):Play()
 	end)
 
 	return b
@@ -113,13 +103,14 @@ end
 
 local btnErase = makeButton("Erase Tsunamis",55,Color3.fromRGB(200,60,60))
 local btnSteal = makeButton("Steal Brainrot",110,Color3.fromRGB(150,80,255))
+local btnCollect = makeButton("Collect Base Items",165,Color3.fromRGB(60,180,200))
 
 --================ ERASE TSUNAMI =================
 local eraseOn=false
 local eraseConn
 
 local function clearTsunamis()
-	local f=workspace:FindFirstChild("ActiveTsunamis")
+	local f=Workspace:FindFirstChild("ActiveTsunamis")
 	if not f then return end
 	for _,v in ipairs(f:GetChildren()) do v:Destroy() end
 end
@@ -129,7 +120,7 @@ btnErase.MouseButton1Click:Connect(function()
 	if eraseOn then
 		btnErase.BackgroundColor3=Color3.fromRGB(60,200,100)
 		clearTsunamis()
-		local f=workspace:FindFirstChild("ActiveTsunamis")
+		local f=Workspace:FindFirstChild("ActiveTsunamis")
 		if f then
 			eraseConn=f.ChildAdded:Connect(function(o)
 				task.wait()
@@ -154,7 +145,31 @@ local function parseRate(t)
 	return n
 end
 
-local BUSY=false
+--================ BASE DETECTION =================
+local function detectBase()
+	local char = player.Character or player.CharacterAdded:Wait()
+	local hrp = char:WaitForChild("HumanoidRootPart")
+	for _,base in ipairs(BASES_FOLDER:GetChildren()) do
+		if base:IsA("Model") then
+			local primaryPart = base.PrimaryPart or base:FindFirstChildWhichIsA("BasePart")
+			if primaryPart and (hrp.Position - primaryPart.Position).Magnitude < 10 then
+				myBase = base
+				break
+			end
+		end
+	end
+end
+
+-- Karakter spawn olduktan sonra base algıla
+player.CharacterAdded:Connect(function(char)
+	task.wait(0.5)
+	detectBase()
+end)
+
+-- Açılışta bir defa öldürüp base algılamayı tetikleyelim
+local char = player.Character or player.CharacterAdded:Wait()
+char:BreakJoints()
+task.wait(1)
 
 --================ STEAL =================
 btnSteal.MouseButton1Click:Connect(function()
@@ -164,7 +179,7 @@ btnSteal.MouseButton1Click:Connect(function()
 	local char=player.Character or player.CharacterAdded:Wait()
 	local hrp=char:WaitForChild("HumanoidRootPart")
 
-	local spawn=workspace:FindFirstChild("SpawnLocation1")
+	local spawn=Workspace:FindFirstChild("SpawnLocation1")
 	local back=spawn and (spawn.CFrame+Vector3.new(0,3,0)) or hrp.CFrame
 
 	-- Işınlanma
@@ -173,7 +188,7 @@ btnSteal.MouseButton1Click:Connect(function()
 	for i=1,3 do RunService.Heartbeat:Wait() end
 
 	-- Celestial öncelikli kontrol
-	local activeBrainrots = workspace:FindFirstChild("ActiveBrainrots")
+	local activeBrainrots = Workspace:FindFirstChild("ActiveBrainrots")
 	local targetFolder = nil
 
 	if activeBrainrots then
@@ -219,6 +234,38 @@ btnSteal.MouseButton1Click:Connect(function()
 	-- Geri dön
 	task.wait(0.35)
 	hrp.CFrame=back
+	BUSY=false
+end)
+
+--================ COLLECT BASE ITEMS =================
+btnCollect.MouseButton1Click:Connect(function()
+	if not myBase then return end
+	if BUSY then return end
+	BUSY=true
+
+	local char=player.Character or player.CharacterAdded:Wait()
+	local hrp=char:WaitForChild("HumanoidRootPart")
+
+	-- Tüm Slots içindeki Collect objelerini al
+	local slotsFolder = myBase:FindFirstChild("Slots")
+	if slotsFolder then
+		for _,slot in ipairs(slotsFolder:GetChildren()) do
+			local collect = slot:FindFirstChild("Collect")
+			if collect then
+				-- Karakter temasıyla topla
+				collect.Position = hrp.Position
+				task.wait(0.03) -- hafif delay toplama hissi
+				collect:Destroy()
+			end
+		end
+	end
+
+	-- Toplama bitince spawn üstüne ışınlan
+	local spawn=Workspace:FindFirstChild("SpawnLocation1")
+	if spawn then
+		hrp.CFrame = spawn.CFrame + Vector3.new(0,3,0)
+	end
+
 	BUSY=false
 end)
 
