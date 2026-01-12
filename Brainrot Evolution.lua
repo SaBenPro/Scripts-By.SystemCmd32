@@ -1,6 +1,6 @@
 --==================================================
--- SystemCmd32 | Apple / Golden Apple / Chick Farm
--- FINAL MEGA FIX + MICRO HIT TREMOR
+-- SystemCmd32 | Multi Farm
+-- TP BEHIND (ULTIMATE HEIGHT BASED) + SNAP + MICRO TREMOR
 --==================================================
 
 --// Services
@@ -19,17 +19,12 @@ local SCRIPT_RUNNING = true
 local farmingType = nil
 local lastCFrame = nil
 
-local character, hrp
+local character, hrp, hum
 
 --==================================================
 -- CONSTANTS
 --==================================================
-local Y_OFFSET = 1
-local BACK_OFFSET = 2.0
-local STOP_UP_OFFSET = 8
 local SNAP_DIST = 0.6
-
--- MICRO TREMOR
 local TREMOR_POWER = 0.12
 local TREMOR_SPEED = 18
 
@@ -38,18 +33,17 @@ local TREMOR_SPEED = 18
 --==================================================
 local function onCharacter(char)
 	character = char
+	hum = char:WaitForChild("Humanoid")
 	hrp = char:WaitForChild("HumanoidRootPart", 5)
 
 	if farmingType and lastCFrame then
-		task.wait(0.15)
+		task.wait(0.1)
 		hrp.CFrame = lastCFrame
 	end
 end
 
 player.CharacterAdded:Connect(onCharacter)
-if player.Character then
-	onCharacter(player.Character)
-end
+if player.Character then onCharacter(player.Character) end
 
 --==================================================
 -- GUI CLEAN
@@ -74,7 +68,6 @@ frame.BorderSizePixel = 0
 frame.Parent = gui
 Instance.new("UICorner", frame).CornerRadius = UDim.new(0,12)
 
--- TOP BAR
 local top = Instance.new("Frame")
 top.Size = UDim2.new(1,0,0,36)
 top.BackgroundColor3 = Color3.fromRGB(30,30,30)
@@ -113,8 +106,7 @@ do
 	end)
 
 	UIS.InputChanged:Connect(function(i)
-		if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement
-		or i.UserInputType == Enum.UserInputType.Touch) then
+		if dragging then
 			local delta = i.Position - dragStart
 			frame.Position = UDim2.new(
 				startPos.X.Scale, startPos.X.Offset + delta.X,
@@ -125,7 +117,7 @@ do
 end
 
 --==================================================
--- BUTTON TEMPLATE
+-- BUTTONS
 --==================================================
 local function createButton(text)
 	local b = Instance.new("TextButton")
@@ -142,17 +134,30 @@ local function createButton(text)
 	return b
 end
 
-local btnApple  = createButton("🍎 Apple Farm")
-local btnGolden = createButton("🌟 Golden Apple Farm")
-local btnChick  = createButton("🐥 Chick Farm")
+local buttons = {
+	createButton("🍎 Apple Farm"),
+	createButton("🌟 Golden Apple Farm"),
+	createButton("🐥 Chick Farm"),
+	createButton("🍊 Orange Farm"),
+	createButton("🐂 Bull Farm"),
+	createButton("💥 Brr Brr Patapim Farm"),
+	createButton("✨ Lirili Larila Farm")
+}
 
-btnGolden.Visible = false
-btnChick.Visible = false
+local types = {
+	"Apple",
+	"Golden Apple",
+	"Chick",
+	"Orange",
+	"Bull",
+	"Brrr Brr Patapim",
+	"Lirili LariIa"
+}
 
-local buttons = {btnApple, btnGolden, btnChick}
-local types = {"Apple", "Golden Apple", "Chick"}
+--==================================================
+-- PAGE SYSTEM + OKLAR (GERİ GELDİ)
+--==================================================
 local index = 1
-
 local function updateButtons()
 	for i,b in ipairs(buttons) do
 		b.Visible = (i == index)
@@ -160,10 +165,9 @@ local function updateButtons()
 end
 updateButtons()
 
--- ARROWS
 local left = Instance.new("TextButton")
 left.Size = UDim2.new(0,30,0,30)
-left.Position = UDim2.new(0,20,1,-40)
+left.Position = UDim2.new(0,15,1,-40)
 left.Text = "<"
 left.Font = Enum.Font.GothamBold
 left.TextSize = 18
@@ -175,47 +179,24 @@ Instance.new("UICorner", left).CornerRadius = UDim.new(0,8)
 
 local right = left:Clone()
 right.Text = ">"
-right.Position = UDim2.new(1,-50,1,-40)
+right.Position = UDim2.new(1,-45,1,-40)
 right.Parent = frame
 
 left.MouseButton1Click:Connect(function()
-	index = math.max(1, index-1)
+	index = math.max(1, index - 1)
 	updateButtons()
 end)
 
 right.MouseButton1Click:Connect(function()
-	index = math.min(#buttons, index+1)
+	index = math.min(#buttons, index + 1)
 	updateButtons()
 end)
 
 --==================================================
--- STOP ALL (ANTI FALL)
+-- STOP ALL
 --==================================================
 local function stopAll()
 	farmingType = nil
-
-	if character then
-		for _,v in ipairs(character:GetDescendants()) do
-			if v:IsA("BasePart") then
-				v.CanCollide = true
-			end
-		end
-	end
-
-	if hrp then
-		local origin = hrp.Position + Vector3.new(0, STOP_UP_OFFSET, 0)
-		local rayParams = RaycastParams.new()
-		rayParams.FilterDescendantsInstances = {character}
-		rayParams.FilterType = Enum.RaycastFilterType.Blacklist
-
-		local ray = Workspace:Raycast(origin, Vector3.new(0,-50,0), rayParams)
-		if ray then
-			hrp.CFrame = CFrame.new(ray.Position + Vector3.new(0,3,0))
-		else
-			hrp.CFrame = hrp.CFrame + Vector3.new(0, STOP_UP_OFFSET, 0)
-		end
-	end
-
 	for _,b in ipairs(buttons) do
 		b.Text = b.Text:match("(.+) :").." : OFF"
 		b.BackgroundColor3 = Color3.fromRGB(45,45,45)
@@ -240,17 +221,37 @@ end
 --==================================================
 local function getTarget()
 	local folder = workspace:FindFirstChild("FirstWorldEnemies")
-	if not folder then return nil end
-
-	local list = {}
+	if not folder then return end
 	for _,v in ipairs(folder:GetChildren()) do
 		if v:IsA("Model") and v.Name == farmingType then
-			table.insert(list, v)
+			return v
 		end
 	end
+end
 
-	if #list == 0 then return nil end
-	return list[math.random(#list)]
+--==================================================
+-- 🔥 ULTIMATE TP BEHIND
+--==================================================
+local function tpBehindTarget(targetModel)
+	if not targetModel or not hrp or not character then return end
+
+	local tr = targetModel:FindFirstChild("HumanoidRootPart")
+	if not tr then return end
+
+	local _, charSize = character:GetBoundingBox()
+	local charHeight = charSize.Y
+	local targetHeight = tr.Size.Y
+
+	local backDistance = math.clamp((charHeight * 0.55) + (targetHeight * 0.35), 2.5, 8)
+	local yOffset = math.clamp(charHeight * 0.5, 1.5, 6)
+
+	local backPos =
+		tr.Position
+		- tr.CFrame.LookVector * backDistance
+		+ Vector3.new(0, yOffset, 0)
+
+	hrp.CFrame = CFrame.new(backPos, tr.Position)
+	lastCFrame = hrp.CFrame
 end
 
 --==================================================
@@ -261,11 +262,7 @@ task.spawn(function()
 		if farmingType and hrp then
 			local model = getTarget()
 			if model then
-				local part = model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart")
-				if part then
-					lastCFrame = part.CFrame * CFrame.new(0, Y_OFFSET, BACK_OFFSET)
-					hrp.CFrame = lastCFrame
-				end
+				tpBehindTarget(model)
 				while farmingType and model.Parent do
 					task.wait(0.15)
 				end
@@ -276,7 +273,7 @@ task.spawn(function()
 end)
 
 --==================================================
--- NOCLIP + SNAP + MICRO TREMOR
+-- NOCLIP + SNAP + TREMOR
 --==================================================
 RunService.Heartbeat:Connect(function()
 	if not farmingType or not hrp or not lastCFrame then return end
@@ -291,11 +288,12 @@ RunService.Heartbeat:Connect(function()
 		hrp.CFrame = lastCFrame
 	end
 
-	-- MICRO HIT TREMOR (vurmayı garanti eder)
 	local t = tick()
-	local tremorX = math.sin(t * TREMOR_SPEED) * TREMOR_POWER
-	local tremorZ = math.cos(t * TREMOR_SPEED) * TREMOR_POWER
-	hrp.CFrame = lastCFrame * CFrame.new(tremorX, 0, tremorZ)
+	hrp.CFrame = lastCFrame * CFrame.new(
+		math.sin(t * TREMOR_SPEED) * TREMOR_POWER,
+		0,
+		math.cos(t * TREMOR_SPEED) * TREMOR_POWER
+	)
 end)
 
 --==================================================
@@ -305,7 +303,6 @@ UIS.InputBegan:Connect(function(i,g)
 	if g then return end
 	if i.KeyCode == Enum.KeyCode.T then
 		SCRIPT_RUNNING = false
-		farmingType = nil
 		gui:Destroy()
 	end
 end)
