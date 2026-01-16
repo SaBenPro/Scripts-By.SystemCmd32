@@ -1,4 +1,3 @@
---By. SystemCmd32
 local HeadSize = 16
 local IsDisabled = true
 local IsTeamCheckEnabled = false 
