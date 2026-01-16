@@ -1,5 +1,3 @@
-print(Hitbox Creator: SystemCmd32)
---Please no steal script /:/
 --By. SystemCmd32
 local HeadSize = 16
 local IsDisabled = true
